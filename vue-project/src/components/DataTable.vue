@@ -74,7 +74,7 @@ import type { Income, Order, Sale, Stock } from "@/types/api";
 
 type ApiData = Income | Order | Sale | Stock;
 
-interface TableColumn {
+export interface TableColumn {
     key: string;
     title: string;
     sortable?: boolean;

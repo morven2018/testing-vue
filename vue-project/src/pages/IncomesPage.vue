@@ -1,8 +1,7 @@
 <script setup lang="ts">
-
-import DataTable from "@/components/DataTable.vue";
+import DataTable, { type TableColumn } from "@/components/DataTable.vue";
+import SimpleChart from "@/components/SimpleChart.vue";
 import { computed, onMounted, ref } from "vue";
-import type { TableColumn } from "@/components/DataTable.vue";
 import { useApiData } from "@/composables/useApiData";
 import type { Income } from "@/types/api";
 
@@ -37,7 +36,7 @@ function getCurrentDateTo(): string {
   return `${year}-${month}-${day}`;
 }
 
-const columns: TableColumn = [
+const columns: TableColumn[] = [
   { key: 'income_id', title: 'ID поступления', sortable: true, type: 'number' },
   { key: 'number', title: 'Номер поставки', sortable: true, type: 'string' },
   { key: 'date', title: 'Дата поступления', sortable: true, type: 'date' },
@@ -165,46 +164,50 @@ onMounted(() => {
   <div class="incomes-page">
     <h1>Поступления товаров</h1>
     
-    <!-- Фильтры -->
+    <SimpleChart 
+      :data="data" 
+      title="Количество поступлений по дням"
+    />
+    
     <div class="filters">
       <div class="filter-group">
-        <label>Дата от:</label>
+        <label>Дата от:
         <input 
           type="date"
           v-model="localFilters.dateFrom" 
           @change="applyFilters"
           class="filter-input"
-        >
+        ></label>
       </div>
       
       <div class="filter-group">
-        <label>Дата до:</label>
+        <label>Дата до:
         <input 
           type="date"
           v-model="localFilters.dateTo" 
           @change="applyFilters"
           class="filter-input"
-        >
+        ></label>
       </div>
       
       <div class="filter-group">
-        <label>Артикул поставщика:</label>
+        <label>Артикул поставщика:
         <input 
           v-model="localFilters.supplier_article" 
           @input="applyFilters"
           placeholder="Введите артикул"
           class="filter-input"
-        >
+        ></label>
       </div>
       
       <div class="filter-group">
-        <label>Склад:</label>
+        <label>Склад:
         <input 
           v-model="localFilters.warehouse_name" 
           @input="applyFilters"
           placeholder="Введите склад"
           class="filter-input"
-        >
+        ></label>
       </div>
       
       <button @click="clearAllFilters" class="clear-btn">Очистить фильтры</button>
@@ -221,6 +224,10 @@ onMounted(() => {
       <div class="stat-item">
         <span class="stat-label">Показано записей:</span>
         <span class="stat-value">{{ sortedData.length }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Общее количество:</span>
+        <span class="stat-value">{{ data.reduce((sum, item) => sum + item.quantity, 0).toLocaleString('ru-RU') }} шт.</span>
       </div>
     </div>
 
