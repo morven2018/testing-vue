@@ -1,4 +1,6 @@
 export interface Income {
+  income_id: string
+  id: string
   incomeId: number
   number: string
   date: string
