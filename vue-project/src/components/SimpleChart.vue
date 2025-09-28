@@ -12,21 +12,29 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, nextTick } from 'vue';
-import { Chart, registerables } from 'chart.js';
+import { Chart, registerables, type ChartItem } from 'chart.js';
 
 Chart.register(...registerables);
 
 interface ChartDataItem {
-  date: string;
-  quantity: number;
+  [key: string]: unknown;
 }
 
 interface Props {
   data: ChartDataItem[];
   title: string;
+  valueKey?: string;
+  labelKey?: string;
+  groupBy?: string;
+  chartType?: 'bar' | 'line';
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  valueKey: 'quantity',
+  labelKey: 'date',
+  groupBy: '',
+  chartType: 'bar'
+});
 
 const chartCanvas = ref<HTMLCanvasElement>();
 let chartInstance: Chart | null = null;
@@ -40,29 +48,117 @@ const createChart = () => {
     chartInstance.destroy();
   }
 
-  const dataByDate = new Map<string, number>();
+  if (props.groupBy) {
+    createGroupedChart();
+  } else {
+    createSimpleChart();
+  }
+};
+
+const createGroupedChart = () => {
+  const groupedData = new Map<string, Map<string, number>>();
+  const groups = new Set<string>();
+
+  props.data.forEach(item => {
+    try {
+      const label = String(item[props.labelKey] || '');
+      const group = String(item[props.groupBy] || 'Не указано');
+      const value = Number(item[props.valueKey]) || 0;
+
+      if (!groupedData.has(label)) {
+        groupedData.set(label, new Map());
+      }
+
+      const labelData = groupedData.get(label)!;
+      labelData.set(group, (labelData.get(group) || 0) + value);
+      groups.add(group);
+    } catch (error) {
+      console.error('Ошибка обработки данных:', error, item);
+    }
+  });
+
+  const labels = Array.from(groupedData.keys());
+  const groupArray = Array.from(groups);
+  const colors = generateColors(groupArray.length);
+
+  const datasets = groupArray.map((group, index) => {
+    const data = labels.map(label => {
+      const labelData = groupedData.get(label);
+      return labelData ? (labelData.get(group) || 0) : 0;
+    });
+
+    return {
+      label: group,
+      data: data,
+      backgroundColor: colors[index],
+      borderColor: colors[index],
+      borderWidth: 1
+    };
+  });
+
+  if (!chartCanvas.value) return;
+
+  chartInstance = new Chart(chartCanvas.value as ChartItem, {
+    type: props.chartType,
+    data: {
+      labels: labels,
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+        title: {
+          display: true,
+          text: props.title
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: getYAxisLabel()
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: getXAxisLabel()
+          }
+        }
+      }
+    }
+  });
+};
+
+const createSimpleChart = () => {
+  const labels: string[] = [];
+  const values: number[] = [];
   
   props.data.forEach(item => {
-    const date = new Date(item.date).toLocaleDateString('ru-RU');
-    const quantity = item.quantity || 0;
-    
-    dataByDate.set(date, (dataByDate.get(date) || 0) + quantity);
+    try {
+      const label = String(item[props.labelKey] || '');
+      const value = Number(item[props.valueKey]) || 0;
+      
+      labels.push(label);
+      values.push(value);
+    } catch (error) {
+      console.error('Ошибка обработки данных:', error, item);
+    }
   });
 
-  const sortedDates = Array.from(dataByDate.keys()).sort((a, b) => {
-    return new Date(a.split('.').reverse().join('-')).getTime() - 
-           new Date(b.split('.').reverse().join('-')).getTime();
-  });
+  if (!chartCanvas.value) return;
 
-  const quantities = sortedDates.map(date => dataByDate.get(date) || 0);
-
-  chartInstance = new Chart(chartCanvas.value, {
-    type: 'bar',
+  chartInstance = new Chart(chartCanvas.value as ChartItem, {
+    type: props.chartType,
     data: {
-      labels: sortedDates,
+      labels: labels,
       datasets: [{
-        label: 'Количество товаров',
-        data: quantities,
+        label: getChartLabel(),
+        data: values,
         backgroundColor: 'rgba(54, 162, 235, 0.5)',
         borderColor: 'rgba(54, 162, 235, 1)',
         borderWidth: 1
@@ -76,7 +172,7 @@ const createChart = () => {
         },
         title: {
           display: true,
-          text: 'Поступления по дням'
+          text: props.title
         }
       },
       scales: {
@@ -84,18 +180,50 @@ const createChart = () => {
           beginAtZero: true,
           title: {
             display: true,
-            text: 'Количество товаров'
+            text: getYAxisLabel()
           }
         },
         x: {
           title: {
             display: true,
-            text: 'Дата'
+            text: getXAxisLabel()
           }
         }
       }
     }
   });
+};
+
+const getChartLabel = (): string => {
+  return props.valueKey === 'total_price' ? 'Общая стоимость' : 
+         props.valueKey === 'quantity' ? 'Количество товаров' : 
+         props.valueKey === 'count' ? 'Количество записей' : 'Значение';
+};
+
+const getYAxisLabel = (): string => {
+  return props.valueKey === 'total_price' ? 'Стоимость (руб)' : 
+         props.valueKey === 'count' ? 'Количество записей' : 'Количество товаров';
+};
+
+const getXAxisLabel = (): string => {
+  return props.labelKey === 'warehouse' ? 'Склады' : 'Дата';
+};
+
+const generateColors = (count: number): string[] => {
+  const colors = [
+    'rgba(54, 162, 235, 0.7)',
+    'rgba(255, 99, 132, 0.7)',
+    'rgba(75, 192, 192, 0.7)',
+    'rgba(255, 205, 86, 0.7)',
+    'rgba(153, 102, 255, 0.7)',
+    'rgba(255, 159, 64, 0.7)',
+    'rgba(199, 199, 199, 0.7)',
+    'rgba(83, 102, 255, 0.7)',
+    'rgba(40, 159, 64, 0.7)',
+    'rgba(210, 99, 132, 0.7)'
+  ];
+
+  return colors.slice(0, count);
 };
 
 watch(() => props.data, () => {

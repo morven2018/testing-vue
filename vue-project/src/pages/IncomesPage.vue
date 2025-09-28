@@ -36,6 +36,24 @@ function getCurrentDateTo(): string {
   return `${year}-${month}-${day}`;
 }
 
+const chartData = computed(() => {
+  if (!data.value || data.value.length === 0) return [];
+
+  const dataByDate = new Map<string, number>();
+  
+  data.value.forEach(item => {
+    const date = new Date(item.date).toLocaleDateString('ru-RU');
+    const quantity = item.quantity || 0;
+    
+    dataByDate.set(date, (dataByDate.get(date) || 0) + quantity);
+  });
+
+  return Array.from(dataByDate.entries()).map(([date, quantity]) => ({
+    date,
+    quantity
+  }));
+});
+
 const columns: TableColumn[] = [
   { key: 'income_id', title: 'ID поступления', sortable: true, type: 'number' },
   { key: 'number', title: 'Номер поставки', sortable: true, type: 'string' },
@@ -165,8 +183,9 @@ onMounted(() => {
     <h1>Поступления товаров</h1>
     
     <SimpleChart 
-      :data="data" 
+      :data="chartData" 
       title="Количество поступлений по дням"
+      value-key="quantity"
     />
     
     <div class="filters">
@@ -224,10 +243,6 @@ onMounted(() => {
       <div class="stat-item">
         <span class="stat-label">Показано записей:</span>
         <span class="stat-value">{{ sortedData.length }}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Общее количество:</span>
-        <span class="stat-value">{{ data.reduce((sum, item) => sum + item.quantity, 0).toLocaleString('ru-RU') }} шт.</span>
       </div>
     </div>
 
