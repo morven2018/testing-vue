@@ -1,17 +1,6 @@
 {
-  "editor.formatOnSave": false,
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
-  },
-  "eslint.validate": [
-    "vue",
-    "typescript"
-  ],
-  "vetur.format.defaultFormatter.html": "none",
-  "vetur.format.defaultFormatter.js": "none",
-  "vetur.format.defaultFormatter.ts": "none",
-  "[vue]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": false
-  }
+  "vue3snippets.importFirst": false,
+  "vetur.validation.template": false,
+  "vetur.format.enable": false,
+  "editor.defaultFormatter": null
 }
