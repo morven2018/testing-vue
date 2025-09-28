@@ -90,7 +90,7 @@ export function useApiData<T extends ApiData>(): UseApiDataReturn<T> {
           result = await wbApi.getSales(dateFrom, dateTo, apiFilters)
           break
         case 'stocks':
-          result = await wbApi.getStocks(dateFrom, dateTo, apiFilters)
+          result = await wbApi.getStocks(apiFilters)
           break
         default:
           throw new Error(`Unknown endpoint: ${endpoint}`)

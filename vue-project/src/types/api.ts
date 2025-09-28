@@ -26,7 +26,7 @@ export interface Order {
   quantity: number
   totalPrice: number
   discountPercent: number
-  warehouseName: string
+  warehouse_name: string
   oblast: string
   incomeID: number
   odid: number
@@ -54,7 +54,7 @@ export interface Sale {
   isRealization: boolean
   orderId: number
   promoCodeDiscount?: number
-  warehouseName: string
+  warehouse_name: string
   countryName: string
   oblastOkrugName: string
   regionName: string
@@ -77,10 +77,10 @@ export interface Stock {
   quantity: number
   isSupply: boolean
   isRealization: boolean
-  quantityFull: number
+  quantity_full: number
   quantityNotInOrders: number
   warehouse: number
-  warehouseName: string
+  warehouse_name: string
   inWayToClient: number
   inWayFromClient: number
   nmId: number
@@ -91,6 +91,7 @@ export interface Stock {
   SCCode: string
   Price: number
   Discount: number
+  total_price: number
 }
 
 export type ApiEndpoint = 'incomes' | 'orders' | 'sales' | 'stocks'

@@ -3,7 +3,6 @@ import type { Income, Order, Sale, Stock } from "@/types/api";
 const API_BASE_URL = 'http://109.73.206.144:6969/api';
 const API_KEY = import.meta.env.VITE_WB_API_KEY || "";
 
-
 interface ApiParams {
   dateFrom: string
   [key: string]: string | number | boolean | undefined
@@ -76,20 +75,30 @@ class Api {
     }
   }
 
+  private getYesterdayDate(): string {
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   async getIncomes(dateFrom: string, dateTo: string, params: Omit<ApiParams, 'dateFrom'> = {}): Promise<ApiResponse<Income>> {
     return this.request<Income>('/incomes', { dateFrom, dateTo, ...params })
   }
 
-  async getOrders(dateFrom: string,  dateTo: string, params: Omit<ApiParams, 'dateFrom'> = {}): Promise<ApiResponse<Order>> {
+  async getOrders(dateFrom: string, dateTo: string, params: Omit<ApiParams, 'dateFrom'> = {}): Promise<ApiResponse<Order>> {
     return this.request<Order>('/orders', { dateFrom, dateTo, ...params })
   }
 
-  async getSales(dateFrom: string,  dateTo: string, params: Omit<ApiParams, 'dateFrom'> = {}): Promise<ApiResponse<Sale>> {
+  async getSales(dateFrom: string, dateTo: string, params: Omit<ApiParams, 'dateFrom'> = {}): Promise<ApiResponse<Sale>> {
     return this.request<Sale>('/sales', { dateFrom, dateTo, ...params })
   }
 
-  async getStocks(dateFrom: string,   dateTo: string, params: Omit<ApiParams, 'dateFrom'> = {}): Promise<ApiResponse<Stock>> {
-    return this.request<Stock>('/stocks', { dateFrom, dateTo, ...params })
+  async getStocks(params: Omit<ApiParams, 'dateFrom'> = {}): Promise<ApiResponse<Stock>> {
+    const yesterday = this.getYesterdayDate();
+    return this.request<Stock>('/stocks', { dateFrom: yesterday, ...params })
   }
 }
 
