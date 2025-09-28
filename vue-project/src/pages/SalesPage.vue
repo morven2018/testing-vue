@@ -188,7 +188,6 @@ const columns: TableColumn[] = [
   { key: 'region_name', title: 'Регион', sortable: true, type: 'string' },
   { key: 'income_id', title: 'ID поставки', sortable: true, type: 'number' },
   { key: 'sale_id', title: 'ID продажи', sortable: true, type: 'string' },
-  { key: 'odid', title: 'ID заказа в WB', sortable: true, type: 'number' },
   { key: 'nm_id', title: 'Артикул WB', sortable: true, type: 'number' },
   { key: 'subject', title: 'Предмет', sortable: true, type: 'string' },
   { key: 'category', title: 'Категория', sortable: true, type: 'string' },

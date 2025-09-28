@@ -56,7 +56,6 @@ const chartData = computed(() => {
 
 const columns: TableColumn[] = [
   { key: 'income_id', title: 'ID поступления', sortable: true, type: 'number' },
-  { key: 'number', title: 'Номер поставки', sortable: true, type: 'string' },
   { key: 'date', title: 'Дата поступления', sortable: true, type: 'date' },
   { key: 'last_change_date', title: 'Дата изменения', sortable: true, type: 'date' },
   { key: 'supplier_article', title: 'Артикул поставщика', sortable: true, type: 'string' },
