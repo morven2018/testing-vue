@@ -1,6 +1,6 @@
 import type { Income, Order, Sale, Stock } from "@/types/api";
 
-const API_BASE_URL = 'http://109.73.206.144:6969/api';
+const API_BASE_URL = '/api';
 const API_KEY = import.meta.env.VITE_WB_API_KEY || "";
 
 interface ApiParams {
@@ -37,43 +37,58 @@ class Api {
   }
 
   private async request<T>(endpoint: string, params: ApiParams): Promise<ApiResponse<T>> {
-    const url = new URL(`${this.baseUrl}${endpoint}`)
+  const url = new URL(`${this.baseUrl}${endpoint}`, window.location.origin)
 
-    const defaultParams: ApiParams = {
-      dateFrom: params.dateFrom, 
-      key: this.apiKey,
-      limit: 100,
-      page: 1,
-      dateTo: ""
+  const defaultParams: ApiParams = {
+    dateFrom: params.dateFrom, 
+    key: this.apiKey,
+    limit: 100,
+    page: 1,
+    dateTo: ""
+  }
+
+  const allParams: ApiParams = { ...defaultParams, ...params }
+
+  Object.keys(allParams).forEach((key) => {
+    const value = allParams[key]
+    if (value !== null && value !== undefined) {
+      url.searchParams.append(key, value.toString())
     }
+  })
 
-    const allParams: ApiParams = { ...defaultParams, ...params }
+  console.log('Making request to:', url.toString())
 
-    Object.keys(allParams).forEach((key) => {
-      const value = allParams[key]
-      if (value !== null && value !== undefined) {
-        url.searchParams.append(key, value.toString())
-      }
+  try {
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     })
 
-    try {
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
+    console.log('Response status:', response.status)
+    console.log('Response headers:', response.headers)
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
+    const contentType = response.headers.get('content-type')
+    const responseText = await response.text()
+    
+    console.log('Content-Type:', contentType)
+    console.log('Response text (first 200 chars):', responseText.substring(0, 200))
 
-      return (await response.json()) as ApiResponse<T>
-    } catch (error) {
-      console.error('API request failed:', error)
-      throw error
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error(`Expected JSON but got: ${contentType}. Response: ${responseText.substring(0, 100)}`)
     }
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}, body: ${responseText}`)
+    }
+
+    return JSON.parse(responseText) as ApiResponse<T>
+  } catch (error) {
+    console.error('API request failed:', error)
+    throw error
   }
+}
 
   private getYesterdayDate(): string {
     const date = new Date();
