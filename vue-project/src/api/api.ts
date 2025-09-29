@@ -1,6 +1,7 @@
 import type { Income, Order, Sale, Stock } from "@/types/api";
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = 'https://cors-anywhere.herokuapp.com/http://109.73.206.144:6969/api';
+
 const API_KEY = import.meta.env.VITE_WB_API_KEY || "";
 
 interface ApiParams {
@@ -37,62 +38,65 @@ class Api {
   }
 
   private async request<T>(endpoint: string, params: ApiParams): Promise<ApiResponse<T>> {
-  const url = new URL(`${this.baseUrl}${endpoint}`, window.location.origin)
+    // Очищаем endpoint от лишних символов
+    const cleanEndpoint = endpoint.replace(/^=+|=+$/g, '');
+    
+    // Создаем URL
+    const url = new URL(`${this.baseUrl}${cleanEndpoint}`, window.location.origin);
 
-  const defaultParams: ApiParams = {
-    dateFrom: params.dateFrom, 
-    key: this.apiKey,
-    limit: 100,
-    page: 1,
-    dateTo: ""
-  }
-
-  const allParams: ApiParams = { ...defaultParams, ...params }
-
-  Object.keys(allParams).forEach((key) => {
-    const value = allParams[key]
-    if (value !== null && value !== undefined) {
-      url.searchParams.append(key, value.toString())
+    const defaultParams: ApiParams = {
+      dateFrom: params.dateFrom, 
+      key: this.apiKey,
+      limit: 100,
+      page: 1,
+      dateTo: ""
     }
-  })
 
-  console.log('Making request to:', url.toString())
+    const allParams: ApiParams = { ...defaultParams, ...params }
 
-  try {
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    // Добавляем параметры, исключая пустые значения
+    Object.keys(allParams).forEach((key) => {
+      const value = allParams[key]
+      if (value !== null && value !== undefined && value !== '') {
+        url.searchParams.append(key, value.toString())
+      }
     })
 
-    console.log('Response status:', response.status)
-    console.log('Response headers:', response.headers)
+    console.log('Making request to:', url.toString())
 
-    const contentType = response.headers.get('content-type')
-    const responseText = await response.text()
-    
-    console.log('Content-Type:', contentType)
-    console.log('Response text (first 200 chars):', responseText.substring(0, 200))
+    try {
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      })
 
-    if (!contentType || !contentType.includes('application/json')) {
-      throw new Error(`Expected JSON but got: ${contentType}. Response: ${responseText.substring(0, 100)}`)
+      console.log('Response status:', response.status)
+
+      // Проверяем content-type
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text()
+        console.log('Non-JSON response:', text.substring(0, 200))
+        throw new Error(`Expected JSON but got: ${contentType}`)
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json() as ApiResponse<T>
+      return data
+    } catch (error) {
+      console.error('API request failed:', error)
+      throw error
     }
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}, body: ${responseText}`)
-    }
-
-    return JSON.parse(responseText) as ApiResponse<T>
-  } catch (error) {
-    console.error('API request failed:', error)
-    throw error
   }
-}
 
   private getYesterdayDate(): string {
     const date = new Date();
-    date.setDate(date.getDate() - 1);
+    date.setDate(date.getDate());
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
