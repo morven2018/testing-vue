@@ -1,0 +1,10 @@
+{
+  "routes": [
+    {
+      "src": "vue-project/(.*)",
+      "dest": "vue-project/index.html"
+    }
+  ],
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist"
+}
